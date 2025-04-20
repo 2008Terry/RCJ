@@ -1,14 +1,6 @@
 #pragma once
 
 
-/*
-imports:
-#include <Wire.h> 
-#define TCAADDR 0x70
-
-setup:
-Wire.begin();
-*/
 
 #include <Wire.h> 
 #include <Arduino.h>
@@ -16,8 +8,16 @@ Wire.begin();
 
 #define TCAADDR 0x70
 
-int JMP_BEnum();
-int JMP_BEstr();
-void tcaselect(uint8_t bus);
+//void tcaselect(uint8_t bus);
+
+#define FSDA 10
+#define FSCL 9
+#define BSDA 12
+#define BSCL 11
+
+void setup_infra();
+int maxChannel(TwoWire *wire);
+int maxNum(TwoWire *wire);
+int channelNum(int t, TwoWire *wire);
 void printInfrared();
 

@@ -1,7 +1,9 @@
-#ifndef LSTMSONAR_H
-#define LSTMSONAR_H
+#pragma once
 
-//#include "lstm_weights15_nonblock_nonradius.h" //改成当前模型的参数库
+#include "lstm15_weights_0blocks.h" //改成当前模型的参数库
+#include <math.h>
+#include <Arduino.h>
+#include "sonar.h"
 
 // 定义 LSTM 参数
 #define input_size 6 // 输入特征数  
@@ -20,7 +22,7 @@ double sigmoid(double x);
 void lstm_step(double input[input_size]);
 void getLocal(double input[input_size]);
 #define radius 7
-extern const int timeInterval;
-void moveTo(float x,float y,float speed,float dire);
-#endif
+extern const double timeInterval;
+void moveTo(float x,float y,float speed);
+//void move(double theta);
 

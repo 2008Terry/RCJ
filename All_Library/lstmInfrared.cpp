@@ -1,5 +1,4 @@
 #include "lstmInfrared.h"
-#include "infrared.h"
 
 
 // 加载权重
@@ -25,7 +24,6 @@ double tanh_activation(double x) {
 double sigmoid(double x) {
     return 1.0 / (1.0 + exp(-x));
 }
-
 
 // LSTM 单步前向传播
 void lstm_step(double input[input_size]) {
@@ -77,13 +75,14 @@ void lstm_step(double input[input_size]) {
         hidden_state[i] = output_gate[i] * tanh_activation(cell_state[i]);
     }
 
-    // 计算输出
+    // 计算输出（添加tanh激活）
     for (int i = 0; i < output_size; i++) {
         output[i] = 0.0f;
         for (int j = 0; j < hidden_size; j++) {
             output[i] += hidden_state[j] * W_o[j * output_size + i];
         }
         output[i] += output_bias[i];  // 加输出偏置
+        output[i] = tanh_activation(output[i]);  // 应用tanh激活函数
     }
 }
 
@@ -96,13 +95,12 @@ void lstm_step(double input[input_size]) {
 
 
 const int direF[8]= {-1,3,2,1,12,11,10,9},direB[8]= {-1,9,8,7,6,5,4,3};
-void getBallDire(){
-  tcaselect(0);
-  int ballDireF = JMP_BEnum();
-  int strengthF = JMP_BEstr();
-  tcaselect(1);
-  int ballDireB = JMP_BEnum();
-  int strengthB = JMP_BEstr();
+float getBallDire(){
+  int ballDireF = maxChannel(&Wire);
+  int strengthF = maxNum(&Wire);
+  int ballDireB = maxChannel(&Wire1);
+  int strengthB = maxNum(&Wire1);
+  if(max(strengthF,strengthB) <= 3) return -1;
   int clock;
   if(strengthF > strengthB){
     clock = direF[ballDireF];
@@ -110,8 +108,19 @@ void getBallDire(){
   else{
     clock = direB[ballDireB];
   }
+//   Serial.print(clock);
+//   Serial.print(" ");
   double input[2] = {sin(clock*(2.0*M_PI/12)),cos(clock*(2.0*M_PI/12))};
   lstm_step(input);
-  double dire = atan(output[0]/output[1]);
-  Serial.println(dire);
+//   Serial.print(output[0]);
+//   Serial.print(" ");
+//   Serial.print(output[1]);
+//   Serial.print(" ");
+  float dire = (atan(output[0]/output[1])+(output[1]<0?M_PI:0))/M_PI*180;
+  if(dire < 0) dire += 360;
+ // Serial.println(dire);
+  //delay(20);
+  return dire;
+//   double dire = atan(output[0]/output[1]);
+//   Serial.println(dire);
 }

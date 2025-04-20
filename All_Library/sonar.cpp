@@ -1,8 +1,9 @@
 #include "sonar.h"
 
 
-const int ping_cycle = PING_INTERVAL * (SONAR_NUM + 1);
+//const int ping_cycle = PING_INTERVAL * (SONAR_NUM + 1);
 // +1 用于显示结果的计时器
+const int ping_cycle = PING_INTERVAL * SONAR_NUM;
 unsigned long ping_timer[SONAR_NUM + 1]; 
 //存储超声波距离。
 
@@ -16,7 +17,13 @@ const int address[4] = {0x68,0x69,0x6A,0x6B};
 //   Wire.write(1 << bus);//向iic总线写入tca9548选择连通的地址（0~7接口）
 //   Wire.endTransmission(); //关闭通信
 // }
-
+void setup_sonar(){
+  Wire.begin(I2C_SDA,I2C_SCL);
+  ping_timer[0] = millis() + 75;
+  for (uint8_t i = 0; i < SONAR_NUM; i++) {
+    ping_timer[i+1] = ping_timer[i] + PING_INTERVAL;
+  }
+}
 void trigger(int num){
  // change_dis(num);
   Wire.beginTransmission(address[num]);
@@ -57,10 +64,10 @@ int echo(int num){
 void period(){
   for (uint8_t i = 0; i < SONAR_NUM; i++) {
     int dis = echo(i);
-    Serial.print(echo(i));
+    //Serial.print(echo(i));
     if(dis > 0) ultra.cm[i] = dis;
-    // Serial.print(ultra.cm[i]);
-     Serial.print(" ");
+    Serial.print(ultra.cm[i]);
+    Serial.print(" ");
   }
   Serial.println();
 }
@@ -70,12 +77,16 @@ sonarData getSonarData(){
     // Serial.print(" ");
     // Serial.print(millis());
     // Serial.println();
-    if(i == SONAR_NUM) period();
     if(millis() >= ping_timer[i]){
-      ping_timer[i] += ping_cycle;
-      // if(i == SONAR_NUM) period();
-      // else trigger(i);
-      trigger(i);
+      if(i == SONAR_NUM){
+        ping_timer[i] += readInterval;
+        period();
+      }
+      else{
+        ping_timer[i] += ping_cycle;
+        trigger(i);
+      }
+      
     }
   }
   return ultra;

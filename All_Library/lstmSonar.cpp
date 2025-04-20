@@ -1,8 +1,5 @@
 #include "lstmSonar.h"
-#include "lstm15_weights_0blocks.h" //改成当前模型的参数库
-#include <math.h>
-#include <Arduino.h>
-#include "sonar.h"
+#include "correESP.h"
 
 
 // 加载权重
@@ -92,23 +89,35 @@ void lstm_step(double input[input_size]) {
 
 void getLocal(double input[input_size]){
   lstm_step(input);
-  for (int i = 0;i < output_size;i++){
-    Serial.print(output[i]);
-  }
+//   Serial.print(output[0]);
+//   Serial.print(" ");
+//   Serial.println(output[1]);
 }
 
-const int timeInterval = 1.5;
-void moveTo(float x,float y,float speed,float dire){
-  while(abs(output[0]-x) > radius || (output[1]-y) > radius){
+const double timeInterval = 0.01;
+void moveTo(float x,float y,float speed){
+  bool add;
+  float ratio,theta;
+  while(abs(output[0]-x) > radius || abs(output[1]-y) > radius){
+    add = (x <= output[0]);
+    ratio = 1.0*(-output[1]+y)/(-output[0]+x),theta = atan(ratio)+(add?M_PI:0);
+    if(theta < 0) theta += 2*M_PI;
+    ESPsend(theta);
     getSonarData();
-    double input[input_size] = {ultra.cm[0]/10.0,ultra.cm[1]/10.0,ultra.cm[2]/10.0,ultra.cm[3]/10.0,speed*timeInterval*cos(dire),speed*timeInterval*sin(dire)};
+    double input[input_size] = {ultra.cm[0]/10.0,ultra.cm[1]/10.0,ultra.cm[2]/10.0,ultra.cm[3]/10.0,speed*timeInterval*cos(theta),speed*timeInterval*sin(theta)};
+   // double input[input_size] = {ultra.cm[0]/10.0,ultra.cm[1]/10.0,ultra.cm[2]/10.0,ultra.cm[3]/10.0,0,0};
     getLocal(input);
-    bool add = (x <= output[0]);
-    float ratio = 1.0*(-output[1]+y)/(-output[0]+x),theta = atan(ratio)/M_PI*180+(add?180:0);
-    Serial.println(theta);
-    delay(10);
-    Serial.flush();
+    Serial.print(theta);
+    Serial.print(" ");
+    Serial.print(output[0]);
+    Serial.print(" ");
+    Serial.println(output[1]);
     //move(theta,speed);
   }
 }
 
+// void move(double theta,HardwareSerial* serial){
+//   serial->println(theta);
+//   delay(10);
+//   serial->flush();
+// }

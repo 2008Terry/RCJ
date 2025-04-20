@@ -23,6 +23,8 @@ Serial.println("Example: Write to CAN");
 #include "imu_data_decode.h"
 #include <math.h>
 #include "gray.h"
+#include <SPI.h>
+#include "correMega.h"
 
 
 extern const float kp,ki,kd,dt;
@@ -36,7 +38,8 @@ extern struct can_frame canMsg_OUT;
 extern struct can_frame canMsg_IN;
 extern MCP2515 mcp2515;
 
-void obeyMove();
+extern float moveDire;
+float obeyMove();
 void moveWithGray(float cita,float speed,int duration);
 void pureMove(float cita,float speed,int duration);
 void Encoder_Control(float goal[4]);

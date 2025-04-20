@@ -3,6 +3,7 @@
 #include "lstm10_infrared_weights.h" //改成当前模型的参数库
 #include <math.h>
 #include <Arduino.h>
+#include "infrared.h"
 
 // 定义 LSTM 参数
 #define input_size 2 // 输入特征数  
@@ -22,5 +23,5 @@ void lstm_step(double input[input_size]);
 //void getLocal(double input[input_size]);
 
 extern const int direF[8],direB[8];
-void getBallDire();
+float getBallDire();
 
