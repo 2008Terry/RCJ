@@ -27,7 +27,7 @@ Serial.println("Example: Write to CAN");
 #include "correMega.h"
 
 
-extern const float kp,ki,kd,dt;
+extern const float kp,ki,kd,dt,turnCoe;
 //l:0 r:1 b:2
 extern int v[4],actual_Speed[4];
 extern float integral[4],derivative[4],error[4],pre_error[4];
@@ -38,8 +38,11 @@ extern struct can_frame canMsg_OUT;
 extern struct can_frame canMsg_IN;
 extern MCP2515 mcp2515;
 
+void setup_MegaMotor();
+void obeyBallMove();
 extern float moveDire;
 float obeyMove();
+void moveToBall(float cita,float speed,int duration);
 void moveWithGray(float cita,float speed,int duration);
 void pureMove(float cita,float speed,int duration);
 void Encoder_Control(float goal[4]);
