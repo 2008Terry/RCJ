@@ -12,8 +12,8 @@
 
 #define FSDA 10
 #define FSCL 9
-#define BSDA 12
-#define BSCL 11
+#define BSDA 11
+#define BSCL 12 //with sonar
 
 void setup_infra();
 int maxChannel(TwoWire *wire);

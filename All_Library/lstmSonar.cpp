@@ -4,11 +4,11 @@
 
 // 加载权重
 const double* weights[] = {
-    weight_0,  // 输入权重
-    weight_1,  // 隐藏权重
-    weight_2,  // 偏置
-    weight_3,  // 输出权重
-    weight_4   // 输出偏置
+    weight_0_sonar,  // 输入权重
+    weight_1_sonar,  // 隐藏权重
+    weight_2_sonar,  // 偏置
+    weight_3_sonar,  // 输出权重
+    weight_4_sonar   // 输出偏置
 };
 
 // 初始化隐藏状态和细胞状态
@@ -94,16 +94,13 @@ void getLocal(double input[input_size]){
 //   Serial.println(output[1]);
 }
 
-const double timeInterval = 0.01;
+const double timeInterval = 0.012;
 void moveTo(float x,float y,float speed){
   bool add;
   float ratio,theta;
   while(abs(output[0]-x) > radius || abs(output[1]-y) > radius){
-    add = (x <= output[0]);
-    ratio = 1.0*(-output[1]+y)/(-output[0]+x),theta = atan(ratio)+(add?M_PI:0);
-    if(theta < 0) theta += 2*M_PI;
-    ESPsend(theta);
     getSonarData();
+    ESPsend(theta); //getting localization (for like 1-2 seconds) in setup is better
     double input[input_size] = {ultra.cm[0]/10.0,ultra.cm[1]/10.0,ultra.cm[2]/10.0,ultra.cm[3]/10.0,speed*timeInterval*cos(theta),speed*timeInterval*sin(theta)};
    // double input[input_size] = {ultra.cm[0]/10.0,ultra.cm[1]/10.0,ultra.cm[2]/10.0,ultra.cm[3]/10.0,0,0};
     getLocal(input);
@@ -112,7 +109,10 @@ void moveTo(float x,float y,float speed){
     Serial.print(output[0]);
     Serial.print(" ");
     Serial.println(output[1]);
-    //move(theta,speed);
+
+    add = (x <= output[0]);
+    ratio = 1.0*(-output[1]+y)/(-output[0]+x),theta = atan(ratio)+(add?M_PI:0);
+    if(theta < 0) theta += 2*M_PI;
   }
 }
 

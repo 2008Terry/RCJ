@@ -1,8 +1,8 @@
 #include "infrared.h"
 
 void setup_infra(){
-  Wire.begin(FSDA,FSCL);
-  Wire1.begin(BSDA,BSCL);
+  Wire1.begin(FSDA,FSCL);
+  Wire.begin(BSDA,BSCL);
 }
 
 int maxChannel(TwoWire *wire){
@@ -63,18 +63,18 @@ int channelNum(int t, TwoWire *wire){
 }
 void printInfrared(){
   //Serial.print("信号强度：");
-  Serial.print("1 ");
-  Serial.print(maxChannel(&Wire));
+  Serial.print("1 "); //Front
+  Serial.print(maxChannel(&Wire1));
   Serial.print(" ");
-  Serial.println(maxNum(&Wire));
+  Serial.println(maxNum(&Wire1));
  // Serial.print("第一块板子通道号：");
   
 //  Serial.println();
  // Serial.print("信号强度：");
   // Serial.print("2 ");
-  // Serial.print(maxChannel(&Wire1));
+  // Serial.print(maxChannel(&Wire));
   // Serial.print(" ");
-  // Serial.println(maxNum(&Wire1));
+  // Serial.println(maxNum(&Wire));
  // Serial.print("第二块板子通道号：");
   
  // Serial.println();

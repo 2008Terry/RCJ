@@ -97,17 +97,19 @@ int getAngle(int num){
   Wire.write(0x07);
   Wire.endTransmission();
   Wire.requestFrom(address[num],1);
+  byte angle;
   while(Wire.available()){
-    Serial.println("ok2");
-    byte a = Wire.read();  
-    Serial.println(a);
+ //   Serial.println("ok2");
+    angle = Wire.read();  
+    //Serial.println(a);
   }
+  return angle;
 }
 void setAngle(int num,int level){
 //  change_dis(num);
   Wire.beginTransmission(address[num]);
   Wire.write(0x07);     
-  Wire.write(0x01);      
+  Wire.write(level); //angle
   Wire.endTransmission();
 }
 void setAddress(int num,int addr){
