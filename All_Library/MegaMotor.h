@@ -41,10 +41,12 @@ extern MCP2515 mcp2515;
 void setup_MegaMotor();
 void obeyBallMove();
 extern float moveDire;
+extern int nodata;
+void obeyLock(int speed);
 float obeyMove();
 void moveToBall(float cita,float speed,int duration);
 void moveWithGray(float cita,float speed,int duration);
 void maxPureMove(float cita,float maxSpeed,int duration);
-void pureMove(float cita,float speed,int duration);
+void pureMove(float lock, float cita,float speed,int duration);
 void Encoder_Control(float goal[4]);
 

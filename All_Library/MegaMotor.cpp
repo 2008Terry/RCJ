@@ -2,7 +2,7 @@
 
 
 
-const float kp = 8e-2,ki = 1.3e-5,kd = 5,dt = 1.5,turnCoe = 20;
+const float kp = 8e-2,ki = 1.3e-5,kd = 5,dt = 1.5,turnCoe = 40;
 //l:0 r:1 b:2
 int v[4],actual_Speed[4];
 float integral[4],derivative[4],error[4],pre_error[4];
@@ -40,12 +40,99 @@ void obeyBallMove(){
 
 
 int nodata = 200;
+void obeyLock(int speed){
+  float theta = receive();
+  if(theta != -1) Serial.println(theta);
+  // return;
+  if(theta == -1){
+    nodata++;
+    //Serial.println(nodata);
+    if(nodata > 50){
+      if(0 <= moveDire && moveDire < 7) theta = 6.8;
+      else if(7 <= moveDire && moveDire < 14) theta = 13.8;
+      else if(14 <= moveDire && moveDire < 21) theta = 20.8;
+      else if(21 <= moveDire && moveDire < 28) theta = 27.8;
+    }
+    else{
+      if(0 <= moveDire && moveDire < 7) theta = 6.5;
+      else if(7 <= moveDire && moveDire < 14) theta = 13.5;
+      else if(14 <= moveDire && moveDire < 21) theta = 20.5;
+      else if(21 <= moveDire && moveDire < 28) theta = 27.5;
+    }
+  }
+  else{
+    nodata = 0;
+    moveDire = theta;
+  }
+  
+  if(0 <= theta && theta < 7){
+    //Serial.println(theta);
+    if(theta == 6.5){
+      pureMove(0,moveDire,speed,1);
+      return moveDire;
+    }
+    else if(theta == 6.8){
+      pureMove(0,0,0,1);
+      return -1;
+    }
+    else{
+      pureMove(0,moveDire,speed,8);
+      return moveDire;
+    }
+  }
+  else if(7 <= theta && theta < 14){
+    if(theta == 13.5){
+      pureMove(90,moveDire-7,speed,1);
+      return moveDire-7;
+    }
+    else if(theta == 13.8){
+      pureMove(90,0,0,1);
+      return -1;
+    }
+    else{
+      pureMove(90,moveDire-7,speed,10);
+      return moveDire-7;
+    }
+  }
+  else if(14 <= moveDire && moveDire < 21){
+    if(theta == 20.5){
+      pureMove(180,moveDire-14,speed,1);
+      return moveDire-7;
+    }
+    else if(theta == 20.8){
+      pureMove(180,0,0,1);
+      return -1;
+    }
+    else{
+      pureMove(180,moveDire-14,speed,10);
+      return moveDire-7;
+    }
+  }
+  else if(21 <= moveDire && moveDire < 28){
+    if(theta == 27.5){
+      pureMove(-90,moveDire-21,speed,1);
+      return moveDire-7;
+    }
+    else if(theta == 27.8){
+      pureMove(-90,0,0,1);
+      return -1;
+    }
+    else{
+      pureMove(-90,moveDire-21,speed,10);
+      return moveDire-7;
+    }
+  }
+}
+
+
+
+
 float obeyMove(){
   float theta = receive();
   if(theta == -1){
     nodata++;
-    //Serial.println(nodata);
-    if(nodata > 30){
+    Serial.println(nodata);
+    if(nodata > 50){
       if(0 <= moveDire && moveDire < 7) theta = 6.8;
       else if(7 <= moveDire && moveDire < 14) theta = 13.8;
     }
@@ -58,18 +145,19 @@ float obeyMove(){
     nodata = 0;
     moveDire = theta;
   }
+  
   if(0 <= theta && theta < 7){
-    //Serial.println(theta);
+    Serial.println(theta);
     if(theta == 6.5){
-      pureMove(moveDire,2000,1);
+      pureMove(0,moveDire,2064,1);
       return moveDire;
     }
     else if(theta == 6.8){
-      pureMove(0,0,1);
+      pureMove(0,0,0,1);
       return -1;
     }
     else{
-      pureMove(moveDire,2000,8);
+      pureMove(0,moveDire,2064,8);
       return moveDire;
     }
   }
@@ -139,10 +227,11 @@ void maxPureMove(float cita,float maxSpeed,int duration){
     Encoder_Control(control);//1.5ms
   }
 }
-void pureMove(float cita,float speed,int duration){
+void pureMove(float lock, float cita,float speed,int duration){
  // Serial.println(cita);
   //Serial.print(" ");
   float origin_cita = cita;
+  //Serial.println(cita/M_PI*180);
   float vx = speed*cos(cita), vy = speed*sin(cita),
   v1 = sqrt(2)*(vx+vy), v2 = sqrt(2)*(vx-vy), v3 = -sqrt(2)*(vx+vy), v4 = -sqrt(2)*(vx-vy);
   // Serial.print(v1);
@@ -160,7 +249,9 @@ void pureMove(float cita,float speed,int duration){
       char c = Serial1.read();
       packet_decode(c);
     }
-    float delta_cita = receive_imusol.eul[2];
+    float delta_cita = receive_imusol.eul[2]-lock;
+    if(delta_cita > 180) delta_cita -= 360;
+    if(delta_cita < -180) delta_cita += 360;
   //  Serial.println(delta_cita);
     float turn = delta_cita*turnCoe;
     float control[4] = {v1+turn, v2+turn, v3+turn, v4+turn};
