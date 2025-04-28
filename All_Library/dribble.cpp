@@ -43,7 +43,7 @@ int echo(){
 int dis = 10000;
 int getSonar(){
   int val = echo();
-  if(dis == 10000) trigger();
+  if(dis == 10000) trigger(); //the start of getSoar
   if(val == -1) return dis;
   else if(val < 0){
     trigger();
@@ -60,10 +60,10 @@ void spin(int num){ //0-1000 1000-2000 different direction
 }
 
 int dribbleSpeed = 1000;
-const int suckThre = 80,dribbleThre = 40;
-int32_t dribbleTime,notDribbleTime,outRangeTime;
-const int32_t timeThre = 300;
-bool ready = 0,last = 0,range = 0;
+const int suckThre = 80,dribbleThre = 40; //dis <= suckThre, suck ; dis <= dribbleThre, send to ESP32, dribbleTrue
+int32_t dribbleTime,notDribbleTime,outRangeTime; //record time to identify condition
+const int32_t timeThre = 300; //larger than this threshold -> true, change condition(dribble?suck?)
+bool ready = 0,last = 0,range = 0;//record condition
 void suck(int speed){
   getSonar();
   Serial.println(dis);
