@@ -1,9 +1,12 @@
 #include "ESPMotor.h"
 
-int base = 0,bias = 0;
-int32_t right = 0,left = 0,back = 0;
+int base = 0,bias = 0; //base -> lock direction    bias->degree compensation for tracking ball
+int32_t right = 0,left = 0,back = 0; //record times before locking in other direction
 const int biasCoe = 1.08,turnThre = 40,marginDegree = 10,sonarDire[4][4] = {{0,1,2,3},{2,0,3,1},{3,2,1,0},{1,3,0,2}};
+//biasCoe->multiply by bias to compensate;  turnThre->maximum time before turnl;  marginDegree->degree reserved in the front(wider)
+//sonarDire->sonar sequence in different direction
 const double timeInterval = 0.015,deltaTheta[4] = {0,0.5*M_PI,M_PI,1.5*M_PI};
+//timeInterval->default time period for LSTMsonar;  deltaTheta->correlation between local theta and global theta
 
 
 void setup_ESPMotor(){
@@ -13,8 +16,8 @@ void setup_ESPMotor(){
 }
 
 
-int32_t sucktime = 0;
-const int32_t suckThre = 30;
+int32_t sucktime = 0; //how many time sucked
+const int32_t suckThre = 30; //maximum time sucked
 bool suckBall(){
   // combined with infrared to detect?
   int con = digitalRead(suckTrue);
@@ -32,9 +35,12 @@ const double maxError = 0.001;
 bool equal(double a,double b){
   return abs(a-b) <= maxError;
 }
+
 const int deflect = 10,widMargin = 60,lengMargin = 70;
+//deflect->constant degree away from the edge;  wid/leng Margin->distance away from the edge
 const double diffCoe = 0.8;
-double edgeDetect(double globalTheta,bool *stop){
+//the Coe of compensation for degrees if the robot is close to the margins
+double edgeDetect(double globalTheta,bool *stop){ //change the globalTheta to avoid edge, stop->whether to stop
   double diff = 0;
     if(width-Foutput[0] <= widMargin){
       diff = (widMargin-(width-Foutput[0]))*diffCoe;
@@ -104,7 +110,7 @@ double edgeDetect(double globalTheta,bool *stop){
   return globalTheta;
 }
 
-void lock2Dire(int speed){
+void lock2Dire(int speed,double interval){ //lock in front and back; speed->wheels; interval->LSTM
   double ballDire = getBallDire(); //3-4ms lstm10
   Serial.println(ballDire);
   if(ballDire == -1){
@@ -155,7 +161,7 @@ void lock2Dire(int speed){
     Serial.println(globalTheta);
     double input[input_size] = {filteredSonar[sonarDire[base/7][0]]/10.0,filteredSonar[sonarDire[base/7][1]]/10.0,
     filteredSonar[sonarDire[base/7][2]]/10.0,filteredSonar[sonarDire[base/7][3]]/10.0,
-    speed*timeInterval*cos(globalTheta),speed*timeInterval*sin(globalTheta)};
+    speed*interval*cos(globalTheta),speed*interval*sin(globalTheta)};
     if(stop) input[4] = input[5] = 0;
     getLocal(input);
     // Serial.print(theta);
@@ -165,7 +171,8 @@ void lock2Dire(int speed){
     Serial.println(Foutput[1]);
   }
 }
-void lockWithLocal(int speed){
+
+void lockWithLocal(int speed,double interval){ //lock in four direction; speed->wheels; interval->LSTM
   double ballDire = getBallDire(); //3-4ms lstm10
   Serial.println(ballDire);
   if(ballDire == -1){
@@ -230,7 +237,7 @@ void lockWithLocal(int speed){
     Serial.println(globalTheta);
     double input[input_size] = {filteredSonar[sonarDire[base/7][0]]/10.0,filteredSonar[sonarDire[base/7][1]]/10.0,
     filteredSonar[sonarDire[base/7][2]]/10.0,filteredSonar[sonarDire[base/7][3]]/10.0,
-    speed*timeInterval*cos(globalTheta),speed*timeInterval*sin(globalTheta)};
+    speed*interval*cos(globalTheta),speed*interval*sin(globalTheta)};
     if(stop) input[4] = input[5] = 0;
     getLocal(input);
     // Serial.print(theta);
@@ -242,7 +249,7 @@ void lockWithLocal(int speed){
 }
 
 
-void locking(){
+void locking(){ //useless? lock to ball
   double ballDire = getBallDire(); //3-4ms lstm10
   Serial.println(ballDire);
   if(ballDire == -1) ESPsend(-1);
@@ -286,6 +293,7 @@ void locking(){
 
 
 void moveTo(float x,float y,float speed){ //6cm/s 826speed stable
+// moveTo (x,y) coordinate, with speed(in cm/s)
   bool add;
   float ratio,theta;
   while(abs(Foutput[0]-x) > radius || abs(Foutput[1]-y) > radius){
@@ -306,7 +314,7 @@ void moveTo(float x,float y,float speed){ //6cm/s 826speed stable
   }
 }
 
-void offenceMoveTo(float x,float y,float speed){
+void offenceMoveTo(float x,float y,float speed){//moveTo in the opposite direction
   bool add;
   float ratio,gloablTheta;
   while(abs(Foutput[0]-x) > radius || abs(Foutput[1]-y) > radius){
@@ -330,7 +338,7 @@ void offenceMoveTo(float x,float y,float speed){
 }
 
 
-void moveBall(){
+void moveBall(){ //iseless? lock to ball
   double ballDire = getBallDire(); //3-4ms lstm10
   Serial.println(ballDire);
   if(ballDire == -1){

@@ -32,8 +32,8 @@ double edgeDetect(double globalTheta,bool *stop);
 
 
 
-void lock2Dire(int speed);
-void lockWithLocal(int speed);
+void lock2Dire(int speed,double interval);
+void lockWithLocal(int speed,double interval);
 void locking();
 
 #define radius 5
