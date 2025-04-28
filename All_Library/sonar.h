@@ -25,6 +25,7 @@ extern sonarData ultra;
 extern const int address[4];
 //void change_dis(uint8_t bus);
 void setup_sonar();
+void wait(int num,double thre);
 void trigger(int num);
 int echo(int num);
 void period();

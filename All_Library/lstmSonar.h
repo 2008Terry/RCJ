@@ -21,8 +21,6 @@ double tanh_activation(double x);
 double sigmoid(double x);
 void lstm_step(double input[input_size]);
 void getLocal(double input[input_size]);
-#define radius 5
-extern const double timeInterval;
-void moveTo(float x,float y,float speed);
-//void move(double theta);
+void setup_Local();
+
 

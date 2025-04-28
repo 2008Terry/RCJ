@@ -24,6 +24,12 @@ void setup_sonar(){
     ping_timer[i+1] = ping_timer[i] + PING_INTERVAL;
   }
 }
+void wait(int num,double thre){
+  while(1){
+    getSonarData();
+    if(ultra.cm[num] < thre) return;
+  }
+}
 void trigger(int num){
  // change_dis(num);
   Wire.beginTransmission(address[num]);
@@ -114,9 +120,9 @@ void setAngle(int num,int level){
 }
 void setAddress(int num,int addr){
  // change_dis(num);
-  Wire.beginTransmission(address[num]);
+  Wire.beginTransmission(0x6A);
   Wire.write(0x05);     
-  Wire.write(0xD6);      
+  Wire.write(addr);      
   Wire.endTransmission();
 }
 int getAddress(int num){

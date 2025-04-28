@@ -2,7 +2,7 @@
 
 
 
-const float kp = 8e-2,ki = 1.3e-5,kd = 5,dt = 1.5,turnCoe = 40;
+const float kp = 8e-2,ki = 1.3e-5,kd = 5,dt = 1.5,turnCoe = 70;
 //l:0 r:1 b:2
 int v[4],actual_Speed[4];
 float integral[4],derivative[4],error[4],pre_error[4];
@@ -24,8 +24,51 @@ void setup_MegaMotor(){
   Serial.println("Example: Write to CAN");
 }
 
+void shoot(bool clockwise,int speed,int shotDegree,int32_t waitTime){
+  /*
+  clockwise -> which way to shoot
+  speed -> backward speed to separate the ball
+  shotDegree -> shoot at what degree
+  waitTime -> how much time to wait after the shooting
+  */
+  int32_t stopmillis = 0x7f7f7f7f;
+  while(1){
+    while (Serial1.available()) {
+      char c = Serial1.read();
+      packet_decode(c);
+    }
+    float theta = receive_imusol.eul[2];
+    Serial.println(theta);
+    float accel = (180-abs(theta))*340;
+    float v1 = -sqrt(2)*speed, v2 = sqrt(2)*speed, v3 = sqrt(2)*speed, v4 = -sqrt(2)*speed;
+    if(clockwise){
+      float control[4] = {v1+accel,v2+accel,v3+accel,v4+accel};
+      if(theta < shotDegree && theta > 0){ //at shotDegree, shoot!
+        stopmillis = min(stopmillis,millis());
+        for (int i = 0;i < 4;i++) control[i] = 0;
+        dribbleSpeed = 1000;
+        spin(dribbleSpeed);
+        if(millis() - stopmillis > waitTime) return;
+      }
+      Encoder_Control(control);
+    }
+    else{
+      float control[4] = {v1-accel,v2-accel,v3-accel,v4-accel};
+      if(-1*shotDegree < theta && theta < 0){ //at shotDegree, shoot!
+        stopmillis = min(stopmillis,millis());
+        for (int i = 0;i < 4;i++) control[i] = 0;
+        dribbleSpeed = 1000;
+        spin(dribbleSpeed);
+        if(millis() - stopmillis > waitTime) return;
+      }
+      Encoder_Control(control);
+    }
+  }
+}
+
+
 float moveDire = 0;
-void obeyBallMove(){
+void obeyBallMove(){ //lock dribbler toward ball
   float theta = receive();
   Serial.println(moveDire);
   if(theta == -1){
@@ -39,15 +82,29 @@ void obeyBallMove(){
 }
 
 
-int nodata = 200;
-void obeyLock(int speed){
+const double maxError = 0.01;
+bool equal(double a,double b){
+  return abs(a-b) <= maxError;
+}
+
+int32_t nodata = 200,stop = 0;
+const int32_t stopThre = 20;
+void obeyLock(int speed,int interval){ 
+  /*offence code, move with 4 direction locked
+  speed -> puremove speed, in speed of wheels
+  interval -> move how long, in ms
+  */
   float theta = receive();
-  if(theta != -1) Serial.println(theta);
+  //Serial.println(theta);
+  if(theta != -1){
+    //Serial.print("theta ");
+    Serial.println(theta);
+  }
   // return;
   if(theta == -1){
     nodata++;
     //Serial.println(nodata);
-    if(nodata > 50){
+    if(nodata > 50){ // be aware of the range of nodata!!
       if(0 <= moveDire && moveDire < 7) theta = 6.8;
       else if(7 <= moveDire && moveDire < 14) theta = 13.8;
       else if(14 <= moveDire && moveDire < 21) theta = 20.8;
@@ -62,63 +119,76 @@ void obeyLock(int speed){
   }
   else{
     nodata = 0;
-    moveDire = theta;
+    if(0 <= theta && theta <= 2*M_PI ||
+    7 <= theta && theta <= 7+2*M_PI ||
+    14 <= theta && theta <= 14+2*M_PI ||
+    21 <= theta && theta <= 21+2*M_PI){
+      moveDire = theta;
+      stop = abs(stop-1);
+    }
+    if(equal(theta,6.9) || equal(theta,13.9) || 
+    equal(theta,20.9) || equal(theta,27.9)) stop++;
   }
   
   if(0 <= theta && theta < 7){
-    //Serial.println(theta);
-    if(theta == 6.5){
-      pureMove(0,moveDire,speed,1);
-      return moveDire;
-    }
-    else if(theta == 6.8){
+    // Serial.print("theta2  ");
+    // Serial.print(theta);
+    // Serial.print(" ");
+    // Serial.println(moveDire);
+    
+    if(stop > stopThre || theta == 6.8 || equal(theta,6.9)){
+      //Serial.println("ok");
       pureMove(0,0,0,1);
       return -1;
     }
+    else if(theta == 6.5){
+      pureMove(0,moveDire,speed,1);
+      return moveDire;
+    }
     else{
-      pureMove(0,moveDire,speed,8);
+      pureMove(0,moveDire,speed,interval);
       return moveDire;
     }
   }
   else if(7 <= theta && theta < 14){
-    if(theta == 13.5){
-      pureMove(90,moveDire-7,speed,1);
-      return moveDire-7;
-    }
-    else if(theta == 13.8){
+    if(stop > stopThre || theta == 13.8 || equal(theta,13.9)){
       pureMove(90,0,0,1);
       return -1;
     }
+    else if(theta == 13.5){
+      pureMove(90,moveDire-7,speed,1);
+      return moveDire-7;
+    }
     else{
-      pureMove(90,moveDire-7,speed,10);
+      pureMove(90,moveDire-7,speed,interval);
       return moveDire-7;
     }
   }
   else if(14 <= moveDire && moveDire < 21){
-    if(theta == 20.5){
-      pureMove(180,moveDire-14,speed,1);
-      return moveDire-7;
-    }
-    else if(theta == 20.8){
+    if(stop > stopThre || theta == 20.8 || equal(theta,20.9)){
       pureMove(180,0,0,1);
       return -1;
     }
+    else if(theta == 20.5){
+      pureMove(180,moveDire-14,speed,1);
+      return moveDire-7;
+    }
     else{
-      pureMove(180,moveDire-14,speed,10);
+      pureMove(180,moveDire-14,speed,interval);
       return moveDire-7;
     }
   }
   else if(21 <= moveDire && moveDire < 28){
-    if(theta == 27.5){
-      pureMove(-90,moveDire-21,speed,1);
-      return moveDire-7;
-    }
-    else if(theta == 27.8){
+    if(stop > stopThre || theta == 27.8 || equal(theta,27.9)){
       pureMove(-90,0,0,1);
       return -1;
     }
+    else if(theta == 27.5){
+      pureMove(-90,moveDire-21,speed,1);
+      return moveDire-7;
+    }
     else{
-      pureMove(-90,moveDire-21,speed,10);
+      pureMove(-90,moveDire-21,speed,interval);
       return moveDire-7;
     }
   }
@@ -127,7 +197,7 @@ void obeyLock(int speed){
 
 
 
-float obeyMove(){
+float obeyMove(){ //useless?
   float theta = receive();
   if(theta == -1){
     nodata++;
@@ -185,7 +255,12 @@ float obeyMove(){
   }
 }
 
-void moveToBall(float cita,float speed,int duration){
+void moveToBall(float cita,float speed,int duration){ //move toward ball, called by obeyBallMove()
+  /*
+  cita -> ballDire in radian
+  speed -> total speed, in speed of wheels 
+  duration -> how much time to move
+  */
   float vx = speed*cos(cita), vy = speed*sin(cita),
   v1 = sqrt(2)*(vx+vy), v2 = sqrt(2)*(vx-vy), v3 = -sqrt(2)*(vx+vy), v4 = -sqrt(2)*(vx-vy),turn;
   if(cita <= 1.5*M_PI) turn = (0.5*M_PI-cita)/M_PI*180*turnCoe;
@@ -197,13 +272,13 @@ void moveToBall(float cita,float speed,int duration){
     // float delta_cita = -cita/M_PI*180;
     // float turn = delta_cita*turnCoe;
     float control[4] = {v1+turn, v2+turn, v3+turn, v4+turn};
-    if(speed == 0){
-      for (int i = 0;i < 4;i++) control[i] = 0;
-    }
+    // if(speed == 0){
+    //   for (int i = 0;i < 4;i++) control[i] = 0;
+    // }
     Encoder_Control(control);//1.5ms
   }
 }
-void maxPureMove(float cita,float maxSpeed,int duration){
+void maxPureMove(float cita,float maxSpeed,int duration){ //useless? to move at maximum speed at all direction
   float vx = maxSpeed*cos(cita), vy = maxSpeed*sin(cita),
   v1 = sqrt(2)*(vx+vy), v2 = sqrt(2)*(vx-vy), v3 = -sqrt(2)*(vx+vy), v4 = -sqrt(2)*(vx-vy);
   int32_t itime = millis();
@@ -228,19 +303,14 @@ void maxPureMove(float cita,float maxSpeed,int duration){
   }
 }
 void pureMove(float lock, float cita,float speed,int duration){
- // Serial.println(cita);
-  //Serial.print(" ");
-  float origin_cita = cita;
-  //Serial.println(cita/M_PI*180);
+  /*
+  lock -> lock at which direction to move: 0front 90left 180back -90right
+  cita -> local move direction, in radian
+  speed -> robot total speed
+  duration -> move how long
+  */
   float vx = speed*cos(cita), vy = speed*sin(cita),
   v1 = sqrt(2)*(vx+vy), v2 = sqrt(2)*(vx-vy), v3 = -sqrt(2)*(vx+vy), v4 = -sqrt(2)*(vx-vy);
-  // Serial.print(v1);
-  // Serial.print(" ");
-  // Serial.print(v2);
-  // Serial.print(" ");
-  // Serial.print(v3);
-  // Serial.print(" ");
-  // Serial.println(v4);
   int32_t itime = millis();
  // Serial.println(itime);
   while(itime+duration >= millis()){
@@ -255,6 +325,15 @@ void pureMove(float lock, float cita,float speed,int duration){
   //  Serial.println(delta_cita);
     float turn = delta_cita*turnCoe;
     float control[4] = {v1+turn, v2+turn, v3+turn, v4+turn};
+
+
+    // Serial.print("speed ");
+    // Serial.println(speed);
+    // for (int i = 0;i < 4;i++){
+    //   Serial.print(control[i]);
+    //   Serial.print(" ");
+    // }
+    // Serial.println();
    // float control[4] = {v1, v2, v3, v4};
     Encoder_Control(control);//1.5ms
   }

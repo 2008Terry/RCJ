@@ -11,9 +11,9 @@ const double* weights_infrared[] = {
 };
 
 // 初始化隐藏状态和细胞状态
-double hidden_state_infrared[hidden_size] = {0.0f};
-double cell_state_infrared[hidden_size] = {0.0f};
-double output_infrared[output_size];
+double hidden_state_infrared[hidden_size_infrared] = {0.0f};
+double cell_state_infrared[hidden_size_infrared] = {0.0f};
+double output_infrared[output_size_infrared];
 
 // 定义激活函数
 double tanh_activation_infrared(double x) {
@@ -26,7 +26,7 @@ double sigmoid_infrared(double x) {
 }
 
 // LSTM 单步前向传播
-void lstm_step_infrared(double input[input_size]) {
+void lstm_step_infrared(double input[input_size_infrared]) {
     // 提取权重
     const double* W_i = weights_infrared[0];  // 输入权重 (input_size, 4 * hidden_size)
     const double* W_h = weights_infrared[1];  // 隐藏权重 (hidden_size, 4 * hidden_size)
@@ -35,51 +35,51 @@ void lstm_step_infrared(double input[input_size]) {
     const double* output_bias = weights_infrared[4];  // 输出偏置 (output_size,)
 
     // 临时变量
-    double gates[4 * hidden_size] = {0.0f};
+    double gates[4 * hidden_size_infrared] = {0.0f};
 
     // 计算输入部分
-    for (int i = 0; i < 4 * hidden_size; i++) {
-        for (int j = 0; j < input_size; j++) {
-            gates[i] += input[j] * W_i[j * (4 * hidden_size) + i];
+    for (int i = 0; i < 4 * hidden_size_infrared; i++) {
+        for (int j = 0; j < input_size_infrared; j++) {
+            gates[i] += input[j] * W_i[j * (4 * hidden_size_infrared) + i];
         }
     }
 
     // 计算隐藏部分
-    for (int i = 0; i < 4 * hidden_size; i++) {
-        for (int j = 0; j < hidden_size; j++) {
-            gates[i] += hidden_state_infrared[j] * W_h[j * (4 * hidden_size) + i];
+    for (int i = 0; i < 4 * hidden_size_infrared; i++) {
+        for (int j = 0; j < hidden_size_infrared; j++) {
+            gates[i] += hidden_state_infrared[j] * W_h[j * (4 * hidden_size_infrared) + i];
         }
         gates[i] += bias[i];  // 加偏置
     }
 
     // 分割门控信号
-    double input_gate[hidden_size];
-    double forget_gate[hidden_size];
-    double cell_gate[hidden_size];
-    double output_gate[hidden_size];
+    double input_gate[hidden_size_infrared];
+    double forget_gate[hidden_size_infrared];
+    double cell_gate[hidden_size_infrared];
+    double output_gate[hidden_size_infrared];
 
-    for (int i = 0; i < hidden_size; i++) {
+    for (int i = 0; i < hidden_size_infrared; i++) {
         input_gate[i] = sigmoid_infrared(gates[i]);
-        forget_gate[i] = sigmoid_infrared(gates[hidden_size + i]);
-        cell_gate[i] = tanh_activation_infrared(gates[2 * hidden_size + i]);
-        output_gate[i] = sigmoid_infrared(gates[3 * hidden_size + i]);
+        forget_gate[i] = sigmoid_infrared(gates[hidden_size_infrared + i]);
+        cell_gate[i] = tanh_activation_infrared(gates[2 * hidden_size_infrared + i]);
+        output_gate[i] = sigmoid_infrared(gates[3 * hidden_size_infrared + i]);
     }
 
     // 更新细胞状态
-    for (int i = 0; i < hidden_size; i++) {
+    for (int i = 0; i < hidden_size_infrared; i++) {
         cell_state_infrared[i] = forget_gate[i] * cell_state_infrared[i] + input_gate[i] * cell_gate[i];
     }
 
     // 更新隐藏状态
-    for (int i = 0; i < hidden_size; i++) {
+    for (int i = 0; i < hidden_size_infrared; i++) {
         hidden_state_infrared[i] = output_gate[i] * tanh_activation_infrared(cell_state_infrared[i]);
     }
 
     // 计算输出（添加tanh激活）
-    for (int i = 0; i < output_size; i++) {
+    for (int i = 0; i < output_size_infrared; i++) {
         output_infrared[i] = 0.0f;
-        for (int j = 0; j < hidden_size; j++) {
-            output_infrared[i] += hidden_state_infrared[j] * W_o[j * output_size + i];
+        for (int j = 0; j < hidden_size_infrared; j++) {
+            output_infrared[i] += hidden_state_infrared[j] * W_o[j * output_size_infrared + i];
         }
         output_infrared[i] += output_bias[i];  // 加输出偏置
         output_infrared[i] = tanh_activation_infrared(output_infrared[i]);  // 应用tanh激活函数
@@ -95,7 +95,7 @@ void lstm_step_infrared(double input[input_size]) {
 
 
 const int direF[8]= {-1,3,2,1,12,11,10,9},direB[8]= {-1,9,8,7,6,5,4,3};
-int noBall = 0;
+int32_t noBall = 0;
 float getBallDire(){
   int ballDireF = maxChannel(&Wire1);
   int strengthF = maxNum(&Wire1);

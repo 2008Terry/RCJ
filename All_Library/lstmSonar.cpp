@@ -94,30 +94,21 @@ void getLocal(double input[input_size]){
 //   Serial.println(output[1]);
 }
 
-const double timeInterval = 0.012;
-void moveTo(float x,float y,float speed){
-  bool add;
-  float ratio,theta;
-  while(abs(output[0]-x) > radius || abs(output[1]-y) > radius){
+void setup_Local(){
+  // !!! which setup?
+  for (int i = 0;i < 100;i++){
+    Serial.print(millis());
+    Serial.println(" 1");
     getSonarData();
-    ESPsend(theta); //getting localization (for like 1-2 seconds) in setup is better
-    double input[input_size] = {ultra.cm[0]/10.0,ultra.cm[1]/10.0,ultra.cm[2]/10.0,ultra.cm[3]/10.0,speed*timeInterval*cos(theta),speed*timeInterval*sin(theta)};
-   // double input[input_size] = {ultra.cm[0]/10.0,ultra.cm[1]/10.0,ultra.cm[2]/10.0,ultra.cm[3]/10.0,0,0};
-    getLocal(input);
-    Serial.print(theta);
-    Serial.print(" ");
-    Serial.print(output[0]);
-    Serial.print(" ");
-    Serial.println(output[1]);
-
-    add = (x <= output[0]);
-    ratio = 1.0*(-output[1]+y)/(-output[0]+x),theta = atan(ratio)+(add?M_PI:0);
-    if(theta < 0) theta += 2*M_PI;
+    Serial.print(millis());
+    Serial.println(" 2");
+    double input[input_size] = {ultra.cm[0]/10.0,ultra.cm[1]/10.0,ultra.cm[2]/10.0,ultra.cm[3]/10.0,0,0};
+    getLocal(input); //15LSTM 2ms   50LSTM 13ms
+    Serial.print(millis());
+    Serial.println(" 3");
+    // Serial.print(output[0]);
+    // Serial.print(" ");
+    // Serial.println(output[1]);
   }
 }
 
-// void move(double theta,HardwareSerial* serial){
-//   serial->println(theta);
-//   delay(10);
-//   serial->flush();
-// }

@@ -25,6 +25,7 @@ Serial.println("Example: Write to CAN");
 #include "gray.h"
 #include <SPI.h>
 #include "correMega.h"
+#include "dribble.h"
 
 
 extern const float kp,ki,kd,dt,turnCoe;
@@ -39,10 +40,15 @@ extern struct can_frame canMsg_IN;
 extern MCP2515 mcp2515;
 
 void setup_MegaMotor();
+void shoot(bool clockwise,int speed,int shotDegree,int32_t waitTime);
 void obeyBallMove();
 extern float moveDire;
-extern int nodata;
-void obeyLock(int speed);
+
+
+extern const double maxError;
+bool equal(double a,double b);
+extern int32_t nodata,stop;
+void obeyLock(int speed,int interval);
 float obeyMove();
 void moveToBall(float cita,float speed,int duration);
 void moveWithGray(float cita,float speed,int duration);
