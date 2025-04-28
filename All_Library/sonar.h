@@ -3,7 +3,7 @@
 
 #include <Wire.h>
 #include <Arduino.h>
-
+#include "KalmanFilter.h"
 
 // #define BUS  0x70 //这个是测距的BUS 看你们设成什么地址自己写
 // #define deviceAddress 0x74
@@ -22,10 +22,11 @@ struct sonarData{
   int cm[SONAR_NUM];
 };
 extern sonarData ultra;
+extern int filteredSonar[4];
 extern const int address[4];
 //void change_dis(uint8_t bus);
 void setup_sonar();
-void wait(int num,double thre);
+void wait(int num,double thre,int waitTime);
 void trigger(int num);
 int echo(int num);
 void period();

@@ -24,7 +24,7 @@ void setup_MegaMotor(){
   Serial.println("Example: Write to CAN");
 }
 
-void shoot(bool clockwise,int speed,int shotDegree,int32_t waitTime){
+void shoot(bool clockwise,int speed,int shotDegree,int spinDegree,int32_t waitTime){ //better shooting after sucking for 3 seconds!!
   /*
   clockwise -> which way to shoot
   speed -> backward speed to separate the ball
@@ -32,6 +32,7 @@ void shoot(bool clockwise,int speed,int shotDegree,int32_t waitTime){
   waitTime -> how much time to wait after the shooting
   */
   int32_t stopmillis = 0x7f7f7f7f;
+  bool alreadyShoot = 0;
   while(1){
     while (Serial1.available()) {
       char c = Serial1.read();
@@ -43,22 +44,26 @@ void shoot(bool clockwise,int speed,int shotDegree,int32_t waitTime){
     float v1 = -sqrt(2)*speed, v2 = sqrt(2)*speed, v3 = sqrt(2)*speed, v4 = -sqrt(2)*speed;
     if(clockwise){
       float control[4] = {v1+accel,v2+accel,v3+accel,v4+accel};
+      if(alreadyShoot) for (int i = 0;i < 4;i++) control[i] = 0;
       if(theta < shotDegree && theta > 0){ //at shotDegree, shoot!
-        stopmillis = min(stopmillis,millis());
-        for (int i = 0;i < 4;i++) control[i] = 0;
         dribbleSpeed = 1000;
         spin(dribbleSpeed);
+        alreadyShoot = 1;
+        stopmillis = min(stopmillis,millis());
+        if(theta < spinDegree) for (int i = 0;i < 4;i++) control[i] = 0;
         if(millis() - stopmillis > waitTime) return;
       }
       Encoder_Control(control);
     }
     else{
-      float control[4] = {v1-accel,v2-accel,v3-accel,v4-accel};
+      float control[4] = {v1+accel,v2+accel,v3+accel,v4+accel};
+      if(alreadyShoot) for (int i = 0;i < 4;i++) control[i] = 0;
       if(-1*shotDegree < theta && theta < 0){ //at shotDegree, shoot!
-        stopmillis = min(stopmillis,millis());
-        for (int i = 0;i < 4;i++) control[i] = 0;
         dribbleSpeed = 1000;
         spin(dribbleSpeed);
+        alreadyShoot = 1;
+        stopmillis = min(stopmillis,millis());
+        if(theta < spinDegree) for (int i = 0;i < 4;i++) control[i] = 0;
         if(millis() - stopmillis > waitTime) return;
       }
       Encoder_Control(control);

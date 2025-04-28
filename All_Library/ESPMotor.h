@@ -28,10 +28,11 @@ double edgeDetect(double globalTheta,bool *stop);
 
 #define suckTrue 46
 #define shoot 3
+#define shootDire 20
 
 
 
-
+void lock2Dire(int speed);
 void lockWithLocal(int speed);
 void locking();
 

@@ -5,9 +5,19 @@ void setup_correMega(){
 }
 
 float receive(){
-  //Serial.println(Serial2.available());
+  // if (Serial2.available() >= 4){
+  //   String serialData = Serial2.readStringUntil('\n');
+  //   float data = serialData.toFloat();
+  //   //Serial.println(data,6);
+  //   return data;
+  // }
+  // return -1;
+
   if (Serial2.available() >= 4){
-    String serialData = Serial2.readStringUntil('\n');
+    String serialData;
+    while(Serial2.available() >= 4){
+      serialData = Serial2.readStringUntil('\n');
+    }
     float data = serialData.toFloat();
     //Serial.println(data,6);
     return data;

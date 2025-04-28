@@ -8,6 +8,7 @@
 
 #define dribbleTrue 23
 #define shootTrue 22
+#define shootDire 24
 
 
 extern Servo esc;  // 创建Servo对象控制电调

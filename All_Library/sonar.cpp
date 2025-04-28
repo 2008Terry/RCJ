@@ -8,6 +8,7 @@ unsigned long ping_timer[SONAR_NUM + 1];
 //存储超声波距离。
 
 sonarData ultra;
+int filteredSonar[4];
 const int address[4] = {0x68,0x69,0x6A,0x6B};
 
 // void change_dis(uint8_t bus) {
@@ -23,12 +24,20 @@ void setup_sonar(){
   for (uint8_t i = 0; i < SONAR_NUM; i++) {
     ping_timer[i+1] = ping_timer[i] + PING_INTERVAL;
   }
+
 }
-void wait(int num,double thre){
+void wait(int num,double thre,int waitTime){
+  while(ultra.cm[num] == 0) getSonarData();
   while(1){
     getSonarData();
-    if(ultra.cm[num] < thre) return;
+    Serial.println(ultra.cm[num]);
+    if(ultra.cm[num] < thre && ultra.cm[num] != -1){
+      Serial.println("begin!");
+      delay(waitTime);
+      return;
+    }
   }
+  
 }
 void trigger(int num){
  // change_dis(num);
@@ -71,11 +80,14 @@ void period(){
   for (uint8_t i = 0; i < SONAR_NUM; i++) {
     int dis = echo(i);
     //Serial.print(echo(i));
-    if(dis > 0) ultra.cm[i] = dis;
-    Serial.print(ultra.cm[i]);
-    Serial.print(" ");
+    if(dis > 0){
+      ultra.cm[i] = dis;
+      filteredSonar[i] = sonarFilter[i].update(ultra.cm[i]);
+    }
+    // Serial.print(ultra.cm[i]);
+    // Serial.print(" ");
   }
-  Serial.println();
+  // Serial.println();
 }
 sonarData getSonarData(){
   for (uint8_t i = 0;i <= SONAR_NUM;i++){

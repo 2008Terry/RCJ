@@ -95,7 +95,7 @@ void lstm_step_infrared(double input[input_size_infrared]) {
 
 
 const int direF[8]= {-1,3,2,1,12,11,10,9},direB[8]= {-1,9,8,7,6,5,4,3};
-int32_t noBall = 0;
+int noBall = 0;
 float getBallDire(){
   int ballDireF = maxChannel(&Wire1);
   int strengthF = maxNum(&Wire1);
@@ -124,6 +124,8 @@ float getBallDire(){
 //   Serial.print(" ");
 //   Serial.print(output[1]);
 //   Serial.print(" ");
+  output_infrared[0] = infraFilter[0].update(output_infrared[0]);
+  output_infrared[1] = infraFilter[1].update(output_infrared[1]);
   float dire = (atan(output_infrared[0]/output_infrared[1])+(output_infrared[1]<0?M_PI:0))/M_PI*180;
   if(dire < 0) dire += 360;
  // Serial.println(dire);

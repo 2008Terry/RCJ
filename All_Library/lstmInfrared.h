@@ -4,6 +4,7 @@
 #include <math.h>
 #include <Arduino.h>
 #include "infrared.h"
+#include "KalmanFilter.h"
 
 // 定义 LSTM 参数
 #define input_size_infrared 2 // 输入特征数  
@@ -23,6 +24,6 @@ void lstm_step_infrared(double input[input_size_infrared]);
 //void getLocal(double input[input_size]);
 
 extern const int direF[8],direB[8];
-extern int32_t noBall;
+extern int noBall;
 float getBallDire();
 

@@ -1,5 +1,4 @@
 #include "lstmSonar.h"
-#include "correESP.h"
 
 
 // 加载权重
@@ -15,6 +14,7 @@ const double* weights[] = {
 double hidden_state[hidden_size] = {0.0f};
 double cell_state[hidden_size] = {0.0f};
 double output[output_size];
+double Foutput[output_size];
 
 // 定义激活函数
 double tanh_activation(double x) {
@@ -85,6 +85,9 @@ void lstm_step(double input[input_size]) {
         }
         output[i] += output_bias[i];  // 加输出偏置
     }
+    for (int i = 0; i < output_size;i++){
+        Foutput[i] = localFilter[i].update(output[i]);
+    }
 }
 
 void getLocal(double input[input_size]){
@@ -97,18 +100,18 @@ void getLocal(double input[input_size]){
 void setup_Local(){
   // !!! which setup?
   for (int i = 0;i < 100;i++){
-    Serial.print(millis());
-    Serial.println(" 1");
+    // Serial.print(millis());
+    // Serial.println(" 1");
     getSonarData();
-    Serial.print(millis());
-    Serial.println(" 2");
-    double input[input_size] = {ultra.cm[0]/10.0,ultra.cm[1]/10.0,ultra.cm[2]/10.0,ultra.cm[3]/10.0,0,0};
+    // Serial.print(millis());
+    // Serial.println(" 2");
+    double input[input_size] = {filteredSonar[0]/10.0,filteredSonar[1]/10.0,filteredSonar[2]/10.0,filteredSonar[3]/10.0,0,0};
     getLocal(input); //15LSTM 2ms   50LSTM 13ms
-    Serial.print(millis());
-    Serial.println(" 3");
-    // Serial.print(output[0]);
-    // Serial.print(" ");
-    // Serial.println(output[1]);
+    // Serial.print(millis());
+    // Serial.println(" 3");
+    Serial.print(Foutput[0]);
+    Serial.print(" ");
+    Serial.println(Foutput[1]);
   }
 }
 

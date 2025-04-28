@@ -16,6 +16,7 @@ extern const double* weights[];
 extern double hidden_state[hidden_size];
 extern double cell_state[hidden_size];
 extern double output[output_size];
+extern double Foutput[output_size];
 
 double tanh_activation(double x);
 double sigmoid(double x);

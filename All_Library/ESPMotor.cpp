@@ -2,18 +2,19 @@
 
 int base = 0,bias = 0;
 int32_t right = 0,left = 0,back = 0;
-const int biasCoe = 0.8,turnThre = 40,marginDegree = 10,sonarDire[4][4] = {{0,1,2,3},{2,0,3,1},{3,2,1,0},{1,3,0,2}};
-const double timeInterval = 0.01,deltaTheta[4] = {0,0.5*M_PI,M_PI,1.5*M_PI};
+const int biasCoe = 1.08,turnThre = 40,marginDegree = 10,sonarDire[4][4] = {{0,1,2,3},{2,0,3,1},{3,2,1,0},{1,3,0,2}};
+const double timeInterval = 0.015,deltaTheta[4] = {0,0.5*M_PI,M_PI,1.5*M_PI};
 
 
 void setup_ESPMotor(){
   pinMode(suckTrue,INPUT);
   pinMode(shoot,OUTPUT);
+  pinMode(shootDire,OUTPUT);
 }
 
 
 int32_t sucktime = 0;
-const int32_t suckThre = 20;
+const int32_t suckThre = 30;
 bool suckBall(){
   // combined with infrared to detect?
   int con = digitalRead(suckTrue);
@@ -27,30 +28,30 @@ bool suckBall(){
 
 
 
-const double maxError = 0.01;
+const double maxError = 0.001;
 bool equal(double a,double b){
   return abs(a-b) <= maxError;
 }
-const int deflect = 10,widMargin = 45,lengMargin = 55;
-const double diffCoe = 1.5;
+const int deflect = 10,widMargin = 60,lengMargin = 70;
+const double diffCoe = 0.8;
 double edgeDetect(double globalTheta,bool *stop){
   double diff = 0;
-    if(width-output[0] <= widMargin){
-      diff = (widMargin-(width-output[0]))*diffCoe;
+    if(width-Foutput[0] <= widMargin){
+      diff = (widMargin-(width-Foutput[0]))*diffCoe;
       if(globalTheta < 0.5*M_PI || 1.5*M_PI < globalTheta){
         if(equal(globalTheta,0) || equal(globalTheta,2*M_PI)) *stop = 1;
         globalTheta = (globalTheta < 0.5*M_PI ? min((90+deflect+diff)/180.0*M_PI,M_PI) : max((270-deflect-diff)/180.0*M_PI,M_PI));
       }
-      if(length-output[1] <= lengMargin){
-        diff = (lengMargin-(length-output[1]))*diffCoe;
+      if(length-Foutput[1] <= lengMargin){
+        diff = (lengMargin-(length-Foutput[1]))*diffCoe;
         Serial.println("corner up right");
         if(globalTheta < M_PI){
           if(equal(globalTheta,0.5*M_PI)) *stop = 1;
           globalTheta = (globalTheta < 0.5*M_PI ? max((360-deflect-diff)/180.0*M_PI,1.5*M_PI) : min((180+deflect+diff)/180.0*M_PI,1.5*M_PI));
         }
       }
-      else if(output[1] <= lengMargin){
-        diff = (lengMargin-output[1])*diffCoe;
+      else if(Foutput[1] <= lengMargin){
+        diff = (lengMargin-Foutput[1])*diffCoe;
         Serial.println("corner down right");
         if(M_PI < globalTheta){
           if(equal(globalTheta,1.5*M_PI)) *stop = 1;
@@ -58,15 +59,15 @@ double edgeDetect(double globalTheta,bool *stop){
         }
       }
     }
-    else if(output[0] <= widMargin){
-      diff = (widMargin-output[0])*diffCoe;
+    else if(Foutput[0] <= widMargin){
+      diff = (widMargin-Foutput[0])*diffCoe;
       if(0.5*M_PI < globalTheta && globalTheta < 1.5*M_PI){
         if(equal(globalTheta,M_PI)) *stop = 1;
         globalTheta = (globalTheta < M_PI ? max((90-deflect-diff)/180.0*M_PI,0.0) : min((270+deflect+diff)/180.0*M_PI,2*M_PI));
       }
 
-      if(length-output[1] <= lengMargin){
-        diff = (lengMargin-(length-output[1]))*diffCoe;
+      if(length-Foutput[1] <= lengMargin){
+        diff = (lengMargin-(length-Foutput[1]))*diffCoe;
         Serial.print(globalTheta);
         Serial.print(" ");
         Serial.println("corner up left");
@@ -75,8 +76,8 @@ double edgeDetect(double globalTheta,bool *stop){
           globalTheta = (globalTheta < 0.5*M_PI ? max((360-deflect-diff)/180.0*M_PI,1.5*M_PI) : min((180+deflect+diff)/180.0*M_PI,1.5*M_PI));
         }
       }
-      else if(output[1] <= lengMargin){
-        diff = (lengMargin-output[1])*diffCoe;
+      else if(Foutput[1] <= lengMargin){
+        diff = (lengMargin-Foutput[1])*diffCoe;
         Serial.println("corner down left");
         if(M_PI < globalTheta){
           if(equal(globalTheta,1.5*M_PI)) *stop = 1;
@@ -85,15 +86,15 @@ double edgeDetect(double globalTheta,bool *stop){
       }
     }
     else{
-      if(length-output[1] <= lengMargin){
-        diff = (lengMargin-(length-output[1]))*diffCoe;
+      if(length-Foutput[1] <= lengMargin){
+        diff = (lengMargin-(length-Foutput[1]))*diffCoe;
         if(globalTheta < M_PI){
           if(equal(globalTheta,0.5*M_PI)) *stop = 1;
           globalTheta = (globalTheta < 0.5*M_PI ? max((360-deflect-diff)/180.0*M_PI,1.5*M_PI) : min((180+deflect+diff)/180.0*M_PI,1.5*M_PI));
         }
       }
-      else if(output[1] <= lengMargin){
-        diff = (lengMargin-output[1])*diffCoe;
+      else if(Foutput[1] <= lengMargin){
+        diff = (lengMargin-Foutput[1])*diffCoe;
         if(M_PI < globalTheta){
           if(equal(globalTheta,1.5*M_PI)) *stop = 1;
           globalTheta = (globalTheta < 1.5*M_PI ? max((180-deflect-diff)/180.0*M_PI,0.5*M_PI) : min((deflect+diff)/180.0*M_PI,0.5*M_PI));
@@ -103,6 +104,67 @@ double edgeDetect(double globalTheta,bool *stop){
   return globalTheta;
 }
 
+void lock2Dire(int speed){
+  double ballDire = getBallDire(); //3-4ms lstm10
+  Serial.println(ballDire);
+  if(ballDire == -1){
+    //Serial.println("no ball");
+    ESPsend(-1);
+    //delay(5);
+  }
+  else{
+    bias = 0;
+    if(30 < ballDire && ballDire < 120){
+      bias = (ballDire-90)*biasCoe;
+      back = 0;
+    }
+    else if(120 < ballDire && ballDire < 225){//left
+      ballDire += 75;
+      back = 0;
+    }
+    else if(315 < ballDire || ballDire < 30){//right
+      ballDire -= 75;
+      while(ballDire < 0) ballDire += 360;
+      back = 0;
+    }
+    else{//back
+      back++;
+      if(back > turnThre){
+        base = (base+14)%28;
+      }
+      bias = (ballDire-270)*biasCoe;
+    }
+    double globalTheta = (ballDire+bias)/180*M_PI+deltaTheta[base/7];
+    while(globalTheta > 2*M_PI) globalTheta -= 2*M_PI;
+    bool stop = 0;
+    globalTheta = edgeDetect(globalTheta,&stop);
+    double temp = globalTheta;
+    temp -= deltaTheta[base/7];
+    while(temp < 0) temp += 2*M_PI;
+    while(temp > 2*M_PI) temp -= 2*M_PI;
+    if(stop) ESPsend(6.9+base);
+    else ESPsend(temp+base);
+    getSonarData();
+    for (int i = 0;i < 4;i++){
+      Serial.print(filteredSonar[sonarDire[base/7][i]]);
+      Serial.print(" ");
+    }
+    Serial.println();
+    Serial.print(temp);
+    Serial.printf(" %d ",stop);
+    Serial.println(globalTheta);
+    double input[input_size] = {filteredSonar[sonarDire[base/7][0]]/10.0,filteredSonar[sonarDire[base/7][1]]/10.0,
+    filteredSonar[sonarDire[base/7][2]]/10.0,filteredSonar[sonarDire[base/7][3]]/10.0,
+    speed*timeInterval*cos(globalTheta),speed*timeInterval*sin(globalTheta)};
+    if(stop) input[4] = input[5] = 0;
+    getLocal(input);
+    // Serial.print(theta);
+    // Serial.print(" ");
+    Serial.print(Foutput[0]);
+    Serial.print(" ");
+    Serial.println(Foutput[1]);
+  }
+}
 void lockWithLocal(int speed){
   double ballDire = getBallDire(); //3-4ms lstm10
   Serial.println(ballDire);
@@ -113,30 +175,35 @@ void lockWithLocal(int speed){
   }
   else{
     bias = 0;
-    if(135+marginDegree < ballDire && ballDire <= 225){
+    if(135+marginDegree < ballDire && ballDire <= 225){ //left
       // counterclockwise spin
-      right++;
-      if(right > turnThre){
+      left++;
+      if(left > turnThre){
         base = (base+7)%28;
         left = right = back = 0;
       }
+      bias = (ballDire-180)*biasCoe;
+      
     }
-    else if(315 <= ballDire ||  ballDire < 45-marginDegree){
+    else if(315 <= ballDire ||  ballDire < 45-marginDegree){ //right
       // clockwise spin
-      left++;
-      if(left > turnThre){
+      right++;
+      if(right > turnThre){
         base = (base+21)%28;
         left = right = back = 0;
       }
+      if(ballDire > 0) bias = ballDire*biasCoe;
+      else bias = (ballDire-360)*biasCoe;
     }
-    else if(225 < ballDire && ballDire < 315){
+    else if(225 < ballDire && ballDire < 315){ //back
       back++;
       if(back > turnThre){
         base = (base+14)%28;
         left = right = back = 0;
       }
+      bias = (ballDire-270)*biasCoe;
     }
-    else{
+    else{ //front
       left = right = back = 0;
       //bias = (ballDire-90)*(ballDire-90)*biasCoe*(ballDire>90?1:-1);
       bias = (ballDire-90)*biasCoe;
@@ -154,23 +221,23 @@ void lockWithLocal(int speed){
     else ESPsend(temp+base);
     getSonarData();
     for (int i = 0;i < 4;i++){
-      Serial.print(ultra.cm[sonarDire[base/7][i]]);
+      Serial.print(filteredSonar[sonarDire[base/7][i]]);
       Serial.print(" ");
     }
     Serial.println();
     Serial.print(temp);
     Serial.printf(" %d ",stop);
     Serial.println(globalTheta);
-    double input[input_size] = {ultra.cm[sonarDire[base/7][0]]/10.0,ultra.cm[sonarDire[base/7][1]]/10.0,
-    ultra.cm[sonarDire[base/7][2]]/10.0,ultra.cm[sonarDire[base/7][3]]/10.0,
+    double input[input_size] = {filteredSonar[sonarDire[base/7][0]]/10.0,filteredSonar[sonarDire[base/7][1]]/10.0,
+    filteredSonar[sonarDire[base/7][2]]/10.0,filteredSonar[sonarDire[base/7][3]]/10.0,
     speed*timeInterval*cos(globalTheta),speed*timeInterval*sin(globalTheta)};
     if(stop) input[4] = input[5] = 0;
     getLocal(input);
     // Serial.print(theta);
     // Serial.print(" ");
-    Serial.print(output[0]);
+    Serial.print(Foutput[0]);
     Serial.print(" ");
-    Serial.println(output[1]);
+    Serial.println(Foutput[1]);
   }
 }
 
@@ -218,23 +285,23 @@ void locking(){
 
 
 
-void moveTo(float x,float y,float speed){
+void moveTo(float x,float y,float speed){ //6cm/s 826speed stable
   bool add;
   float ratio,theta;
-  while(abs(output[0]-x) > radius || abs(output[1]-y) > radius){
+  while(abs(Foutput[0]-x) > radius || abs(Foutput[1]-y) > radius){
     ESPsend(theta); //getting localization (for like 1-2 seconds) in setup is better
     getSonarData();
-    double input[input_size] = {ultra.cm[0]/10.0,ultra.cm[1]/10.0,ultra.cm[2]/10.0,ultra.cm[3]/10.0,speed*timeInterval*cos(theta),speed*timeInterval*sin(theta)};
+    double input[input_size] = {filteredSonar[0]/10.0,filteredSonar[1]/10.0,filteredSonar[2]/10.0,filteredSonar[3]/10.0,speed*timeInterval*cos(theta),speed*timeInterval*sin(theta)};
    // double input[input_size] = {ultra.cm[0]/10.0,ultra.cm[1]/10.0,ultra.cm[2]/10.0,ultra.cm[3]/10.0,0,0};
     getLocal(input);
     Serial.print(theta);
     Serial.print(" ");
-    Serial.print(output[0]);
+    Serial.print(Foutput[0]);
     Serial.print(" ");
-    Serial.println(output[1]);
+    Serial.println(Foutput[1]);
 
-    add = (x <= output[0]);
-    ratio = 1.0*(-output[1]+y)/(-output[0]+x),theta = atan(ratio)+(add?M_PI:0);
+    add = (x <= Foutput[0]);
+    ratio = 1.0*(-Foutput[1]+y)/(-Foutput[0]+x),theta = atan(ratio)+(add?M_PI:0);
     if(theta < 0) theta += 2*M_PI;
   }
 }
@@ -242,22 +309,22 @@ void moveTo(float x,float y,float speed){
 void offenceMoveTo(float x,float y,float speed){
   bool add;
   float ratio,gloablTheta;
-  while(abs(output[0]-x) > radius || abs(output[1]-y) > radius){
+  while(abs(Foutput[0]-x) > radius || abs(Foutput[1]-y) > radius){
     float theta = gloablTheta-M_PI;
     while(theta < 0) theta += 2*M_PI;
     ESPsend(theta+14); //getting localization (for like 1-2 seconds) in setup is better
     getSonarData();
-    double input[input_size] = {ultra.cm[3]/10.0,ultra.cm[2]/10.0,ultra.cm[1]/10.0,ultra.cm[0]/10.0,speed*timeInterval*cos(gloablTheta),speed*timeInterval*sin(gloablTheta)};
+    double input[input_size] = {filteredSonar[3]/10.0,filteredSonar[2]/10.0,filteredSonar[1]/10.0,filteredSonar[0]/10.0,speed*timeInterval*cos(gloablTheta),speed*timeInterval*sin(gloablTheta)};
    // double input[input_size] = {ultra.cm[0]/10.0,ultra.cm[1]/10.0,ultra.cm[2]/10.0,ultra.cm[3]/10.0,0,0};
     getLocal(input);
     Serial.print(gloablTheta);
     Serial.print(" ");
-    Serial.print(output[0]);
+    Serial.print(Foutput[0]);
     Serial.print(" ");
-    Serial.println(output[1]);
+    Serial.println(Foutput[1]);
 
-    add = (x <= output[0]);
-    ratio = 1.0*(-output[1]+y)/(-output[0]+x),gloablTheta = atan(ratio)+(add?M_PI:0);
+    add = (x <= Foutput[0]);
+    ratio = 1.0*(-Foutput[1]+y)/(-Foutput[0]+x),gloablTheta = atan(ratio)+(add?M_PI:0);
     if(gloablTheta < 0) gloablTheta += 2*M_PI;
   }
 }
