@@ -24,6 +24,32 @@ void setup_MegaMotor(){
   Serial.println("Example: Write to CAN");
 }
 
+bool alreadyRevolve = 0;
+void selfRevolve(int speed){
+  if(alreadyRevolve) return;
+  Serial.println(digitalRead(revolveTrue));
+  if(digitalRead(revolveTrue) == HIGH){
+    float theta = 0;
+    while(180-abs(theta) > 5){
+      while (Serial1.available()) {
+        char c = Serial1.read();
+        packet_decode(c);
+      }
+      theta = receive_imusol.eul[2];
+      Serial.println(theta);
+      int coe = (theta>0?-1:1);
+      float control[4] = {coe*speed,coe*speed,coe*speed,coe*speed};
+      Encoder_Control(control);
+    }
+    int32_t init = millis();
+    while(millis()-init <= 100){
+      float control[4] = {0,0,0,0};
+      Encoder_Control(control);
+    }
+    digitalWrite(readyToGo,HIGH);
+    alreadyRevolve = 1;
+  }
+}
 void shoot(bool clockwise,int speed,int shotDegree,int spinDegree,int32_t waitTime){ //better shooting after sucking for 3 seconds!!
   /*
   clockwise -> which way to shoot
@@ -56,7 +82,7 @@ void shoot(bool clockwise,int speed,int shotDegree,int spinDegree,int32_t waitTi
       Encoder_Control(control);
     }
     else{
-      float control[4] = {v1+accel,v2+accel,v3+accel,v4+accel};
+      float control[4] = {v1-accel,v2-accel,v3-accel,v4-accel};
       if(alreadyShoot) for (int i = 0;i < 4;i++) control[i] = 0;
       if(-1*shotDegree < theta && theta < 0){ //at shotDegree, shoot!
         dribbleSpeed = 1000;

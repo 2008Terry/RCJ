@@ -17,13 +17,15 @@ void setup_dribble(){
   pinMode(dribbleTrue,OUTPUT);
   pinMode(shootTrue,INPUT);
   pinMode(shootDire,INPUT);
+  pinMode(revolveTrue,INPUT);
+  pinMode(readyToGo,OUTPUT);
 }
 
 void trigger(){
  // change_dis(num);
   Wire.beginTransmission(0x74);
   Wire.write(0x10);
-  Wire.write(0xB8);
+  Wire.write(0xBD);
   Wire.endTransmission();
 }
 int echo(){
@@ -61,13 +63,13 @@ void spin(int num){ //0-1000 1000-2000 different direction
 }
 
 int dribbleSpeed = 1000;
-const int suckThre = 120,dribbleThre = 40; //dis <= suckThre, suck ; dis <= dribbleThre, send to ESP32, dribbleTrue
+const int suckThre = 200,dribbleThre = 40; //dis <= suckThre, suck ; dis <= dribbleThre, send to ESP32, dribbleTrue
 int32_t dribbleTime,notDribbleTime,outRangeTime; //record time to identify condition
 const int32_t timeThre = 300; //larger than this threshold -> true, change condition(dribble?suck?)
 bool ready = 0,last = 0,range = 0;//record condition
 void suck(int speed){
   getSonar();
-  // Serial.println(dis);
+  Serial.println(dis);
   if(dis <= suckThre){
     dribbleSpeed = speed;
     if(dis <= dribbleThre){

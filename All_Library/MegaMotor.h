@@ -40,6 +40,10 @@ extern struct can_frame canMsg_IN;
 extern MCP2515 mcp2515;
 
 void setup_MegaMotor();
+
+
+extern bool alreadyRevolve;
+void selfRevolve(int speed);
 void shoot(bool clockwise,int speed,int shotDegree,int spinDegree,int32_t waitTime);
 void obeyBallMove();
 extern float moveDire;

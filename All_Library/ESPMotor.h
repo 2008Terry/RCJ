@@ -29,6 +29,8 @@ double edgeDetect(double globalTheta,bool *stop);
 #define suckTrue 46
 #define shoot 3
 #define shootDire 20
+#define revolveTrue 19
+#define alreadyRevolve 13
 
 
 

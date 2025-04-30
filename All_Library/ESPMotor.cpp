@@ -2,7 +2,7 @@
 
 int base = 0,bias = 0; //base -> lock direction    bias->degree compensation for tracking ball
 int32_t right = 0,left = 0,back = 0; //record times before locking in other direction
-const int biasCoe = 1.08,turnThre = 40,marginDegree = 10,sonarDire[4][4] = {{0,1,2,3},{2,0,3,1},{3,2,1,0},{1,3,0,2}};
+const int biasCoe = 0.8,turnThre = 40,marginDegree = 10,sonarDire[4][4] = {{0,1,2,3},{2,0,3,1},{3,2,1,0},{1,3,0,2}};
 //biasCoe->multiply by bias to compensate;  turnThre->maximum time before turnl;  marginDegree->degree reserved in the front(wider)
 //sonarDire->sonar sequence in different direction
 const double timeInterval = 0.015,deltaTheta[4] = {0,0.5*M_PI,M_PI,1.5*M_PI};
@@ -13,11 +13,13 @@ void setup_ESPMotor(){
   pinMode(suckTrue,INPUT);
   pinMode(shoot,OUTPUT);
   pinMode(shootDire,OUTPUT);
+  pinMode(revolveTrue,OUTPUT);
+  pinMode(alreadyRevolve,INPUT);
 }
 
 
 int32_t sucktime = 0; //how many time sucked
-const int32_t suckThre = 30; //maximum time sucked
+const int32_t suckThre = 5; //maximum time sucked
 bool suckBall(){
   // combined with infrared to detect?
   int con = digitalRead(suckTrue);
