@@ -19,6 +19,7 @@ void setup_dribble(){
   pinMode(shootDire,INPUT);
   pinMode(revolveTrue,INPUT);
   pinMode(readyToGo,OUTPUT);
+  delay(500);
 }
 
 void trigger(){

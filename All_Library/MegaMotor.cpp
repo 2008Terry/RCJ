@@ -2,7 +2,7 @@
 
 
 
-const float kp = 8e-2,ki = 1.3e-5,kd = 5,dt = 1.5,turnCoe = 70;
+const float kp = 8e-2,ki = 1.3e-5,kd = 5,dt = 1.5,turnCoe = 90;
 //l:0 r:1 b:2
 int v[4],actual_Speed[4];
 float integral[4],derivative[4],error[4],pre_error[4];
@@ -24,8 +24,40 @@ void setup_MegaMotor(){
   Serial.println("Example: Write to CAN");
 }
 
+
+
+
+// void staticLock(float lockDegree){
+//   Serial.println(digitalRead(revolveTrue));
+//   if(digitalRead(revolveTrue) == HIGH){
+//     float theta = 0,diff = lockDegree-theta;
+//     if(diff)
+//     while(abs(diff) > 5){
+//       while (Serial1.available()) {
+//         char c = Serial1.read();
+//         packet_decode(c);
+//       }
+//       theta = receive_imusol.eul[2];
+//       Serial.println(theta);
+//       int coe = (theta>0?-1:1);
+//       float control[4] = {coe*speed,coe*speed,coe*speed,coe*speed};
+//       Encoder_Control(control);
+//       diff = lockDegree-theta
+//     }
+//     int32_t init = millis();
+//     while(millis()-init <= 100){
+//       float control[4] = {0,0,0,0};
+//       Encoder_Control(control);
+//     }
+//     digitalWrite(readyToGo,HIGH);
+//     alreadyRevolve = 1;
+//   }
+
+// }
+
+
 bool alreadyRevolve = 0;
-void selfRevolve(int speed){
+void offenceRevolve(int speed){
   if(alreadyRevolve) return;
   Serial.println(digitalRead(revolveTrue));
   if(digitalRead(revolveTrue) == HIGH){
@@ -50,7 +82,7 @@ void selfRevolve(int speed){
     alreadyRevolve = 1;
   }
 }
-void shoot(bool clockwise,int speed,int shotDegree,int spinDegree,int32_t waitTime){ //better shooting after sucking for 3 seconds!!
+void shoot(bool clockwise,int constSpin, int speed,int shotDegree,int spinDegree,int32_t waitTime){ //better shooting after sucking for 3 seconds!!
   /*
   clockwise -> which way to shoot
   speed -> backward speed to separate the ball
@@ -65,11 +97,11 @@ void shoot(bool clockwise,int speed,int shotDegree,int spinDegree,int32_t waitTi
       packet_decode(c);
     }
     float theta = receive_imusol.eul[2];
-    Serial.println(theta);
+    // Serial.println(theta);
     float accel = (180-abs(theta))*340;
     float v1 = -sqrt(2)*speed, v2 = sqrt(2)*speed, v3 = sqrt(2)*speed, v4 = -sqrt(2)*speed;
     if(clockwise){
-      float control[4] = {v1+accel,v2+accel,v3+accel,v4+accel};
+      float control[4] = {v1+accel+constSpin,v2+accel+constSpin,v3+accel+constSpin,v4+accel+constSpin};
       if(alreadyShoot) for (int i = 0;i < 4;i++) control[i] = 0;
       if(theta < shotDegree && theta > 0){ //at shotDegree, shoot!
         dribbleSpeed = 1000;
@@ -82,7 +114,7 @@ void shoot(bool clockwise,int speed,int shotDegree,int spinDegree,int32_t waitTi
       Encoder_Control(control);
     }
     else{
-      float control[4] = {v1-accel,v2-accel,v3-accel,v4-accel};
+      float control[4] = {v1-accel-constSpin,v2-accel-constSpin,v3-accel-constSpin,v4-accel-constSpin};
       if(alreadyShoot) for (int i = 0;i < 4;i++) control[i] = 0;
       if(-1*shotDegree < theta && theta < 0){ //at shotDegree, shoot!
         dribbleSpeed = 1000;
@@ -113,7 +145,7 @@ void obeyBallMove(){ //lock dribbler toward ball
 }
 
 
-const double maxError = 0.01;
+const double maxError = 0.001;
 bool equal(double a,double b){
   return abs(a-b) <= maxError;
 }
@@ -128,7 +160,7 @@ void obeyLock(int speed,int interval){
   float theta = receive();
   //Serial.println(theta);
   if(theta != -1){
-    //Serial.print("theta ");
+    Serial.print("theta ");
     Serial.println(theta);
   }
   // return;
@@ -150,18 +182,19 @@ void obeyLock(int speed,int interval){
   }
   else{
     nodata = 0;
+    moveDire = theta;
     if(0 <= theta && theta <= 2*M_PI ||
     7 <= theta && theta <= 7+2*M_PI ||
     14 <= theta && theta <= 14+2*M_PI ||
     21 <= theta && theta <= 21+2*M_PI){
-      moveDire = theta;
+      
       stop = abs(stop-1);
     }
     if(equal(theta,6.9) || equal(theta,13.9) || 
     equal(theta,20.9) || equal(theta,27.9)) stop++;
   }
   
-  if(0 <= theta && theta < 7){
+  if(0 <= moveDire && moveDire < 7){
     // Serial.print("theta2  ");
     // Serial.print(theta);
     // Serial.print(" ");
@@ -172,6 +205,9 @@ void obeyLock(int speed,int interval){
       pureMove(0,0,0,1);
       return -1;
     }
+    else if(equal(theta,6.95)){
+      pureMove(0,0,0,interval);
+    }
     else if(theta == 6.5){
       pureMove(0,moveDire,speed,1);
       return moveDire;
@@ -181,10 +217,13 @@ void obeyLock(int speed,int interval){
       return moveDire;
     }
   }
-  else if(7 <= theta && theta < 14){
+  else if(7 <= moveDire && moveDire < 14){
     if(stop > stopThre || theta == 13.8 || equal(theta,13.9)){
       pureMove(90,0,0,1);
       return -1;
+    }
+    else if(equal(theta,13.95)){
+      pureMove(90,0,0,interval);
     }
     else if(theta == 13.5){
       pureMove(90,moveDire-7,speed,1);
@@ -200,6 +239,10 @@ void obeyLock(int speed,int interval){
       pureMove(180,0,0,1);
       return -1;
     }
+    else if(equal(theta,20.95)){
+      Serial.println("ok");
+      pureMove(180,0,0,interval);
+    }
     else if(theta == 20.5){
       pureMove(180,moveDire-14,speed,1);
       return moveDire-7;
@@ -213,6 +256,9 @@ void obeyLock(int speed,int interval){
     if(stop > stopThre || theta == 27.8 || equal(theta,27.9)){
       pureMove(-90,0,0,1);
       return -1;
+    }
+    else if(equal(theta,27.95)){
+      pureMove(-90,0,0,interval);
     }
     else if(theta == 27.5){
       pureMove(-90,moveDire-21,speed,1);

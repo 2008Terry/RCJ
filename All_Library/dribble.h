@@ -6,11 +6,11 @@
 
 
 
-#define dribbleTrue 23
-#define shootTrue 22
-#define shootDire 24
-#define revolveTrue 25
-#define readyToGo 26
+#define dribbleTrue 23 //suckTrue 46  Mega: whether the ball is being dribbled
+#define shootTrue 22 //shoot 3  ESP: decide to shoot
+#define shootDire 24 //shootDire 20   ESP: which direction to shoot
+#define revolveTrue 25 //revolveTrue 19   ESP: decide to revolve
+#define readyToGo 26 //alreadyRevolve 13  Mega: whether completed revolve
 
 extern Servo esc;  // 创建Servo对象控制电调
 extern const int escPin;

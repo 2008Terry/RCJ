@@ -2,7 +2,7 @@
 
 int base = 0,bias = 0; //base -> lock direction    bias->degree compensation for tracking ball
 int32_t right = 0,left = 0,back = 0; //record times before locking in other direction
-const int biasCoe = 0.8,turnThre = 40,marginDegree = 10,sonarDire[4][4] = {{0,1,2,3},{2,0,3,1},{3,2,1,0},{1,3,0,2}};
+const int biasCoe = 1.05,turnThre = 40,marginDegree = 10,sonarDire[4][4] = {{0,1,2,3},{2,0,3,1},{3,2,1,0},{1,3,0,2}};
 //biasCoe->multiply by bias to compensate;  turnThre->maximum time before turnl;  marginDegree->degree reserved in the front(wider)
 //sonarDire->sonar sequence in different direction
 const double timeInterval = 0.015,deltaTheta[4] = {0,0.5*M_PI,M_PI,1.5*M_PI};
@@ -38,13 +38,14 @@ bool equal(double a,double b){
   return abs(a-b) <= maxError;
 }
 
-const int deflect = 10,widMargin = 60,lengMargin = 70;
+const int deflect = 5,widMargin = 50,lengMargin = 70;
 //deflect->constant degree away from the edge;  wid/leng Margin->distance away from the edge
-const double diffCoe = 0.8;
+const double diffCoe = 0.4;
 //the Coe of compensation for degrees if the robot is close to the margins
 double edgeDetect(double globalTheta,bool *stop){ //change the globalTheta to avoid edge, stop->whether to stop
   double diff = 0;
     if(width-Foutput[0] <= widMargin){
+      Serial.println("right");
       diff = (widMargin-(width-Foutput[0]))*diffCoe;
       if(globalTheta < 0.5*M_PI || 1.5*M_PI < globalTheta){
         if(equal(globalTheta,0) || equal(globalTheta,2*M_PI)) *stop = 1;
@@ -52,7 +53,7 @@ double edgeDetect(double globalTheta,bool *stop){ //change the globalTheta to av
       }
       if(length-Foutput[1] <= lengMargin){
         diff = (lengMargin-(length-Foutput[1]))*diffCoe;
-        Serial.println("corner up right");
+        Serial.println("up right");
         if(globalTheta < M_PI){
           if(equal(globalTheta,0.5*M_PI)) *stop = 1;
           globalTheta = (globalTheta < 0.5*M_PI ? max((360-deflect-diff)/180.0*M_PI,1.5*M_PI) : min((180+deflect+diff)/180.0*M_PI,1.5*M_PI));
@@ -60,7 +61,7 @@ double edgeDetect(double globalTheta,bool *stop){ //change the globalTheta to av
       }
       else if(Foutput[1] <= lengMargin){
         diff = (lengMargin-Foutput[1])*diffCoe;
-        Serial.println("corner down right");
+        Serial.println("down right");
         if(M_PI < globalTheta){
           if(equal(globalTheta,1.5*M_PI)) *stop = 1;
           globalTheta = (globalTheta < 1.5*M_PI ? max((180-deflect-diff)/180.0*M_PI,0.5*M_PI) : min((deflect+diff)/180.0*M_PI,0.5*M_PI));
@@ -68,6 +69,7 @@ double edgeDetect(double globalTheta,bool *stop){ //change the globalTheta to av
       }
     }
     else if(Foutput[0] <= widMargin){
+      Serial.println("left");
       diff = (widMargin-Foutput[0])*diffCoe;
       if(0.5*M_PI < globalTheta && globalTheta < 1.5*M_PI){
         if(equal(globalTheta,M_PI)) *stop = 1;
@@ -76,9 +78,9 @@ double edgeDetect(double globalTheta,bool *stop){ //change the globalTheta to av
 
       if(length-Foutput[1] <= lengMargin){
         diff = (lengMargin-(length-Foutput[1]))*diffCoe;
-        Serial.print(globalTheta);
-        Serial.print(" ");
-        Serial.println("corner up left");
+        // Serial.print(globalTheta);
+        // Serial.print(" ");
+        Serial.println("up left");
         if(globalTheta < M_PI){
           if(equal(globalTheta,0.5*M_PI)) *stop = 1;
           globalTheta = (globalTheta < 0.5*M_PI ? max((360-deflect-diff)/180.0*M_PI,1.5*M_PI) : min((180+deflect+diff)/180.0*M_PI,1.5*M_PI));
@@ -86,7 +88,7 @@ double edgeDetect(double globalTheta,bool *stop){ //change the globalTheta to av
       }
       else if(Foutput[1] <= lengMargin){
         diff = (lengMargin-Foutput[1])*diffCoe;
-        Serial.println("corner down left");
+        Serial.println("down left");
         if(M_PI < globalTheta){
           if(equal(globalTheta,1.5*M_PI)) *stop = 1;
           globalTheta = (globalTheta < 1.5*M_PI ? max((180-deflect-diff)/180.0*M_PI,0.5*M_PI) : min((deflect+diff)/180.0*M_PI,0.5*M_PI));
@@ -95,6 +97,7 @@ double edgeDetect(double globalTheta,bool *stop){ //change the globalTheta to av
     }
     else{
       if(length-Foutput[1] <= lengMargin){
+        Serial.println("up");
         diff = (lengMargin-(length-Foutput[1]))*diffCoe;
         if(globalTheta < M_PI){
           if(equal(globalTheta,0.5*M_PI)) *stop = 1;
@@ -102,6 +105,7 @@ double edgeDetect(double globalTheta,bool *stop){ //change the globalTheta to av
         }
       }
       else if(Foutput[1] <= lengMargin){
+        Serial.println("down");
         diff = (lengMargin-Foutput[1])*diffCoe;
         if(M_PI < globalTheta){
           if(equal(globalTheta,1.5*M_PI)) *stop = 1;
@@ -111,6 +115,60 @@ double edgeDetect(double globalTheta,bool *stop){ //change the globalTheta to av
     }
   return globalTheta;
 }
+
+
+void lock1Dire(int speed,double interval){ //lock in front and back; speed->wheels; interval->LSTM
+  double ballDire = getBallDire(); //3-4ms lstm10
+  Serial.println(ballDire);
+  if(ballDire == -1){
+    //Serial.println("no ball");
+    ESPsend(-1);
+    //delay(5);
+  }
+  else{
+    bias = 0;
+    if(60 < ballDire && ballDire < 120){
+      bias = (ballDire-90)*biasCoe;
+    }
+    else if(130 < ballDire && ballDire < 270){//left
+      ballDire += 60;
+    }
+    else if(270 < ballDire || ballDire < 50){//right
+      ballDire -= 60;
+      while(ballDire < 0) ballDire += 360;
+    }
+    double globalTheta = (ballDire+bias)/180*M_PI;
+    while(globalTheta < 0) globalTheta += 2*M_PI;
+    while(globalTheta > 2*M_PI) globalTheta -= 2*M_PI;
+    bool stop = 0;
+    globalTheta = edgeDetect(globalTheta,&stop);
+    double temp = globalTheta;
+    while(temp < 0) temp += 2*M_PI;
+    while(temp > 2*M_PI) temp -= 2*M_PI;
+    if(stop) ESPsend(6.9);
+    else ESPsend(temp);
+    getSonarData();
+    for (int i = 0;i < 4;i++){
+      Serial.print(filteredSonar[i]);
+      Serial.print(" ");
+    }
+    Serial.println();
+    Serial.print(temp);
+    Serial.printf(" %d ",stop);
+    Serial.println(globalTheta);
+    double input[input_size] = {filteredSonar[0]/10.0,filteredSonar[1]/10.0,
+    filteredSonar[2]/10.0,filteredSonar[3]/10.0,
+    speed*interval*cos(globalTheta),speed*interval*sin(globalTheta)};
+    if(stop) input[4] = input[5] = 0;
+    getLocal(input);
+    // Serial.print(theta);
+    // Serial.print(" ");
+    Serial.print(Foutput[0]);
+    Serial.print(" ");
+    Serial.println(Foutput[1]);
+  }
+}
+
 
 void lock2Dire(int speed,double interval){ //lock in front and back; speed->wheels; interval->LSTM
   double ballDire = getBallDire(); //3-4ms lstm10
@@ -294,14 +352,14 @@ void locking(){ //useless? lock to ball
 
 
 
-void moveTo(float x,float y,float speed){ //6cm/s 826speed stable
+void moveTo(float x,float y,float speed,int interval){ //6cm/s 826speed stable
 // moveTo (x,y) coordinate, with speed(in cm/s)
   bool add;
   float ratio,theta;
   while(abs(Foutput[0]-x) > radius || abs(Foutput[1]-y) > radius){
     ESPsend(theta); //getting localization (for like 1-2 seconds) in setup is better
     getSonarData();
-    double input[input_size] = {filteredSonar[0]/10.0,filteredSonar[1]/10.0,filteredSonar[2]/10.0,filteredSonar[3]/10.0,speed*timeInterval*cos(theta),speed*timeInterval*sin(theta)};
+    double input[input_size] = {filteredSonar[0]/10.0,filteredSonar[1]/10.0,filteredSonar[2]/10.0,filteredSonar[3]/10.0,speed*interval*cos(theta),speed*interval*sin(theta)};
    // double input[input_size] = {ultra.cm[0]/10.0,ultra.cm[1]/10.0,ultra.cm[2]/10.0,ultra.cm[3]/10.0,0,0};
     getLocal(input);
     Serial.print(theta);

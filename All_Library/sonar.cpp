@@ -26,18 +26,39 @@ void setup_sonar(){
   }
 
 }
-void wait(int num,double thre,int waitTime){
+void waitnum(int num, double thre,int waitTime){
   while(ultra.cm[num] == 0) getSonarData();
   while(1){
     getSonarData();
-    Serial.println(ultra.cm[num]);
+    for (int i = 0;i < 4;i++){
+      Serial.print(ultra.cm[i]);
+      Serial.print(" ");
+    }
+    Serial.println();
     if(ultra.cm[num] < thre && ultra.cm[num] != -1){
       Serial.println("begin!");
       delay(waitTime);
-      return;
     }
   }
-  
+}
+int wait(double thre,int waitTime){
+  while(ultra.cm[0] == 0 || ultra.cm[1] == 0 || ultra.cm[2] == 0 || ultra.cm[3] == 0) getSonarData();
+  while(1){
+    getSonarData();
+    for (int i = 0;i < 4;i++){
+      Serial.print(ultra.cm[i]);
+      Serial.print(" ");
+    }
+    Serial.println();
+
+    for (int i = 0;i < 4;i++){
+      if(ultra.cm[i] < thre && ultra.cm[i] != -1){
+        Serial.println("begin!");
+        delay(waitTime);
+        return i;
+      }
+    }
+  }
 }
 void trigger(int num){
  // change_dis(num);

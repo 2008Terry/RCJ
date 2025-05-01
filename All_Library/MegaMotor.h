@@ -43,8 +43,8 @@ void setup_MegaMotor();
 
 
 extern bool alreadyRevolve;
-void selfRevolve(int speed);
-void shoot(bool clockwise,int speed,int shotDegree,int spinDegree,int32_t waitTime);
+void offenceRevolve(int speed);
+void shoot(bool clockwise,int constSpin, int speed,int shotDegree,int spinDegree,int32_t waitTime);
 void obeyBallMove();
 extern float moveDire;
 
